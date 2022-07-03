@@ -1,10 +1,11 @@
 import asyncio
 import websockets
 import json
-from DotaWatcher import CONFIG
+import re
+from JsonManager import JsonManager
 
-robot_qq = CONFIG.robot_qq
-at_string = "[CQ:at,qq="+robot_qq+"]"
+robot_qq = JsonManager.getConfig()["robot_qq"]
+# at_string = "[CQ:at,qq="+robot_qq+"]"
 
 def message_manager(data):
     # 1 命令 (群聊中艾特 或 私聊）
@@ -15,19 +16,37 @@ def message_manager(data):
 
 def command_check(data):
     command = ""
-    if at_string in data["message"] and data["message_type"] == "group":
-        command = data["message"].split(at_string)[1].strip()
+    if data["message_type"] == "group":
+        mo = re.match(r'\[CQ:at,qq=([0-9]+)\]\s(.*)', data["message"])
+        if mo and mo.group(1) == robot_qq:
+            command = mo.group(2)
+            print(command)
+        # command = data["message"].split(at_string)[1].strip()
     elif data["message_type"] == "private":
         command = data["message"]
     else :
         return
 
-    if "user" in command:
-        # 1.1 添加账号
-        user_change(command)
-    elif "manager" in command:
-        # 1.2 添加权限
-        manager_change(command)
+    # 校验命令
+    matchobj = re.match(r'^(find|delete)(user|manager)\s([0-9]+)$', command)
+    if matchobj:
+        command_manager(matchobj.group(1), matchobj.group(2), [matchobj.group(3)])
+
+    matchobj = re.match(r'^(create|update)(user|manager)\s([0-9]+)\s(\S+)\s([0-9]+)$', command)
+    if matchobj:
+        command_manager(matchobj.group(1), matchobj.group(2), [matchobj.group(3), matchobj.group(4), matchobj.group(5)])
+
+
+def command_manager(order, obj, data):
+    print(order, obj, data)
+
+
+    # if "user" in command:
+    #     # 1.1 添加账号
+    #     user_change(command)
+    # elif "manager" in command:
+    #     # 1.2 添加权限
+    #     manager_change(command)
 
 
 def user_change(command):
@@ -91,7 +110,7 @@ async def server(websocket):
         data = json.loads(message)
         if data.get('post_type', None) and data['post_type'] == 'message':
             print(data)
-            message_manager(data)
+            # message_manager(data)
 
 
 async def main():

@@ -1,11 +1,10 @@
-import json
 import dota2api
-from DotaWatcher import CONTEXT, CONFIG, CUSTOMERINFO
+from DotaWatcher import CONTEXT
 from random import randint
+from JsonManager import JsonManager
 
-steamapi = CONFIG.steamapi
+steamapi = JsonManager.getConfig()["steamapi"]
 api = dota2api.Initialise(steamapi, raw_mode=True)
-
 
 # 获取上一把比赛id
 def get_last_match_id_by_userid(uid):
@@ -63,6 +62,7 @@ def parse_match_detail(mdata):
         kda = mdata[2][2] + mdata[2][4]
 
     # 情绪分类， 阴阳怪气语录和表情相关
+    # todo: 情绪判定 需要根据当前使用英雄的平均值。
     if mdata[0]:
         if kda > 3:
             tauntList = CONTEXT.WIN_POSTIVE
@@ -89,32 +89,19 @@ def constitute_sentence(uid, cdata):
         return None
 
     sentence1 = '[CQ:at,qq=%s] %s上一把%s比赛中使用的 %s %s[CQ:face,id=%s]' \
-                % (CUSTOMERINFO.USER_DICT[uid]['qq'], CUSTOMERINFO.USER_DICT[uid]['nickname'], cdata[2],
+                % (JsonManager.getCustomerInfo()["USER_DICT"][uid]['qq'], JsonManager.getCustomerInfo()["USER_DICT"]['nickname'], cdata[2],
                    CONTEXT.HEROES_LIST_CHINESE[cdata[0][2][0]], cdata[4], cdata[5])
     sentence2 = '最终战绩为%s杀%s死%s助攻，kda为%s。' % (cdata[0][2][2], cdata[0][2][3], cdata[0][2][4], cdata[3])
     sentences = [sentence1, sentence2]
     return sentences
 
-
-# 数据处理
-def read_lastmatch():
-    with open("LASTMATCH.json", "r", encoding='utf-8') as f:
-        data = json.load(f)
-    return data
-
-
-def write_lastmatch(data):
-    with open("LASTMATCH.json", "w", encoding='utf-8') as f:
-        json.dump(data, f)
-
-
 # 查看是否已经推送过该比赛
 def check_is_sended(uid, mid):
-    data = read_lastmatch()
+    data = JsonManager.getLastMatch()
     if data.get(uid, None) == mid:
         return True
     data[uid] = mid
-    write_lastmatch(data)
+    JsonManager.setLastMatch(data)
     return False
 
 
