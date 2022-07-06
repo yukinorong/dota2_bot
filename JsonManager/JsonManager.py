@@ -1,8 +1,8 @@
 import json
 
-configPath = "../config/config.json"
-customerPath = "../DotaWatcher/customerInfo.json"
-lastMatchPath = "../DotaWatcher/lastMatch.json"
+configPath = "./config/config.json"
+customerPath = "./DotaWatcher/customerInfo.json"
+lastMatchPath = "./DotaWatcher/lastMatch.json"
 
 
 # config
